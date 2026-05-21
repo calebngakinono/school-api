@@ -13,6 +13,8 @@ class Student(SQLModel, table=True):
     first_name: str
     last_name: str
     email: str
+    courses: list[Course] = Relationship(
+        back_populates="students", link_model=StudentCourseLink)
 
 
 class Course(SQLModel, table=True):
@@ -23,6 +25,8 @@ class Course(SQLModel, table=True):
     title: str
     course_number: str
     credits: int
+    students: list[Student] = Relationship(
+        back_populates="courses", link_model=StudentCourseLink)
 
 
 class Instructor(SQLModel, table=True):

@@ -1,10 +1,16 @@
-
 from fastapi import Depends, FastAPI, status, HTTPException
 from sqlmodel import Session, select
 
 from database import get_db
 from models import Instructor, Student
-from schemas import CreateStudentRequest, CreateStudentResponse, CreateInstructorRequest, CreateInstructorResponse, CreateCourseRequest, CreateCourseResponse
+from schemas import (
+    CreateStudentRequest,
+    CreateStudentResponse,
+    CreateInstructorRequest,
+    CreateInstructorResponse,
+    CreateCourseRequest,
+    CreateCourseResponse,
+)
 from models import Course
 
 app = FastAPI()
@@ -21,6 +27,46 @@ async def create_student(new_student: CreateStudentRequest, db: Session = Depend
     db.add(student)
     db.commit()
     return CreateStudentResponse(student_id=student.student_id)
+
+
+@app.post("/students/{student_id}", status_code=status.HTTP_201_CREATED)
+async def add_student_to_course(student_id: int, course_id: int, db: Session = Depends(get_db)) -> None:
+    # Get Student
+    student: Student | None = db.get(Student, student_id)
+
+    if student is None:
+        raise HTTPException(status_code=404, detail=f"Student with ID {
+                            student_id} not found")
+
+    # Get Course
+    course: Course | None = db.get(Course, course_id)
+
+    if course is None:
+        raise HTTPException(status_code=404, detail=f"Course with ID {
+                            course_id} not found")
+
+    # option 1
+    # student.courses.append(course)
+
+    # option2
+    course.students.append(student)
+
+    db.commit()
+
+
+@app.get("/students/{student_id}/courses")
+async def get_student_courses(student_id: int, db: Session = Depends(get_db)) -> dict[str, str]:
+
+    student: Student | None = db.get(Student, student_id)
+
+    if student is None:
+        raise HTTPException(status_code=404, detail=f"Student with ID {
+                            student_id} not found")
+
+    courses: dict[str, str] = {}
+    for course in student.courses:
+        courses[course.course_number] = course.title
+    return courses
 
 
 @app.delete("/students/{student_id}")
@@ -61,7 +107,9 @@ async def delete_course(course_id: int, db: Session = Depends(get_db)) -> None:
 
 
 @app.post("/instructors")
-async def create_instructor(new_instructor: CreateInstructorRequest, db: Session = Depends(get_db)) -> CreateInstructorResponse:
+async def create_instructor(
+    new_instructor: CreateInstructorRequest, db: Session = Depends(get_db)
+) -> CreateInstructorResponse:
     instructor = Instructor(**new_instructor.model_dump())
     db.add(instructor)
     db.commit()
@@ -97,7 +145,7 @@ async def get_number_of_course(id: int, db: Session = Depends(get_db)) -> int:
         raise HTTPException(
             status_code=404, detail=f"Instructor with ID {id} not found ")
 
-    return (len(instructor.courses))
+    return len(instructor.courses)
 
 
 @app.get("/instructors/{id}/course-info")
