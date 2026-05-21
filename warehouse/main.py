@@ -73,7 +73,7 @@ async def get_instructors(db: Session = Depends(get_db)) -> list[Instructor]:
     return db.exec(select(Instructor)).all()
 
 
-@app.get("/instructors/{id}")
+@app.get("/instructors/{id}/courses")
 async def get_instructor_courses(id: int, db: Session = Depends(get_db)) -> list[str]:
     instructor: Instructor | None = db.get(Instructor, id)
 
