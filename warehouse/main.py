@@ -88,6 +88,34 @@ async def get_instructor_courses(id: int, db: Session = Depends(get_db)) -> list
     return course_names
 
 
+@app.get("/instructors/{id}/num_courses")
+async def get_number_of_course(id: int, db: Session = Depends(get_db)) -> int:
+
+    instructor: Instructor | None = db.get(Instructor, id)
+
+    if instructor is None:
+        raise HTTPException(
+            status_code=404, detail=f"Instructor with ID {id} not found ")
+
+    return (len(instructor.courses))
+
+
+@app.get("/instructors/{id}/course-info")
+async def get_course_info(id: int, db: Session = Depends(get_db)) -> dict[str, str]:
+
+    instructor: Instructor | None = db.get(Instructor, id)
+
+    if instructor is None:
+        raise HTTPException(
+            status_code=404, detail=f"Instructor with ID {id} not found ")
+
+    course_info: dict[str, str] = {}
+
+    for course in instructor.courses:
+        course_info[course.course_number] = course.title
+    return course_info
+
+
 @app.delete("/instructors/{instructor_id}")
 async def delete_instructor(instructor_id: int, db: Session = Depends(get_db)) -> None:
     instructor: Instructor | None = db.get(Instructor, instructor_id)
